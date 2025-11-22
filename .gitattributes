@@ -1,0 +1,5 @@
+# Убедитесь, что чувствительные файлы не обрабатываются Git
+.env linguist-vendored
+user_settings.json linguist-vendored
+*.log linguist-vendored
+

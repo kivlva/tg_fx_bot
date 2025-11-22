@@ -1,0 +1,4 @@
+# Зависимости для Telegram бота конвертера валют
+python-telegram-bot==22.5
+requests>=2.32.0
+
