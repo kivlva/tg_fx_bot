@@ -8,7 +8,7 @@ from pathlib import Path
 
 import requests
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup, KeyboardButton
-from telegram.error import Conflict, BadRequest
+from telegram.error import Conflict, BadRequest, TimedOut, NetworkError
 from telegram.ext import (
     Application,
     CommandHandler,
@@ -135,20 +135,46 @@ def get_rates(base: str, symbols: list[str]) -> Dict[str, float]:
             
             return filtered_rates
             
-        except requests.exceptions.RequestException as e:
+        except requests.exceptions.Timeout as e:
             last_error = e
+            error_type = "таймаут"
             if attempt < API_MAX_RETRIES - 1:
                 wait_time = API_RETRY_DELAY * (attempt + 1)  # Экспоненциальная задержка
-                logger.warning(f"Попытка {attempt + 1}/{API_MAX_RETRIES} не удалась. Повтор через {wait_time}с...")
+                logger.warning(f"Попытка {attempt + 1}/{API_MAX_RETRIES} не удалась ({error_type}). Повтор через {wait_time}с...")
                 time.sleep(wait_time)
             else:
-                logger.error(f"Все {API_MAX_RETRIES} попытки получения курсов не удались")
+                logger.error(f"Все {API_MAX_RETRIES} попытки получения курсов не удались ({error_type})")
+        except requests.exceptions.ConnectionError as e:
+            last_error = e
+            error_type = "ошибка подключения"
+            if attempt < API_MAX_RETRIES - 1:
+                wait_time = API_RETRY_DELAY * (attempt + 1)  # Экспоненциальная задержка
+                logger.warning(f"Попытка {attempt + 1}/{API_MAX_RETRIES} не удалась ({error_type}). Повтор через {wait_time}с...")
+                time.sleep(wait_time)
+            else:
+                logger.error(f"Все {API_MAX_RETRIES} попытки получения курсов не удались ({error_type})")
+        except requests.exceptions.RequestException as e:
+            last_error = e
+            error_type = "сетевая ошибка"
+            if attempt < API_MAX_RETRIES - 1:
+                wait_time = API_RETRY_DELAY * (attempt + 1)  # Экспоненциальная задержка
+                logger.warning(f"Попытка {attempt + 1}/{API_MAX_RETRIES} не удалась ({error_type}). Повтор через {wait_time}с...")
+                time.sleep(wait_time)
+            else:
+                logger.error(f"Все {API_MAX_RETRIES} попытки получения курсов не удались ({error_type})")
         except (ValueError, KeyError, TypeError) as e:
             # Ошибки парсинга не требуют retry
             raise RuntimeError(f"Ошибка обработки ответа API: {e}") from e
     
     # Если все попытки не удались
-    raise RuntimeError(f"Не удалось получить курсы валют после {API_MAX_RETRIES} попыток: {last_error}")
+    error_msg = f"Не удалось получить курсы валют после {API_MAX_RETRIES} попыток"
+    if isinstance(last_error, requests.exceptions.Timeout):
+        error_msg += " (таймаут соединения)"
+    elif isinstance(last_error, requests.exceptions.ConnectionError):
+        error_msg += " (ошибка подключения к серверу)"
+    else:
+        error_msg += f": {last_error}"
+    raise RuntimeError(error_msg)
 
 
 def load_user_settings() -> Dict[str, Dict]:
@@ -484,13 +510,32 @@ async def convert_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
     except RuntimeError as e:
         logger.exception("Ошибка при получении курсов")
-        await update.message.reply_text(
-            "❌ Не удалось получить актуальный курс валют.\n"
-            "Возможные причины:\n"
-            "• Проблемы с интернет-соединением\n"
-            "• Временная недоступность API\n\n"
-            "Попробуй позже 🙏"
-        )
+        error_msg = str(e).lower()
+        if "таймаут" in error_msg:
+            user_message = (
+                "⏱️ Таймаут при получении курсов валют.\n\n"
+                "Возможные причины:\n"
+                "• Медленное интернет-соединение\n"
+                "• Перегрузка сервера API\n\n"
+                "Попробуй позже 🙏"
+            )
+        elif "подключения" in error_msg or "connection" in error_msg:
+            user_message = (
+                "🔌 Ошибка подключения к серверу курсов валют.\n\n"
+                "Возможные причины:\n"
+                "• Нет интернет-соединения\n"
+                "• Сервер временно недоступен\n\n"
+                "Проверь интернет и попробуй позже 🙏"
+            )
+        else:
+            user_message = (
+                "❌ Не удалось получить актуальный курс валют.\n"
+                "Возможные причины:\n"
+                "• Проблемы с интернет-соединением\n"
+                "• Временная недоступность API\n\n"
+                "Попробуй позже 🙏"
+            )
+        await update.message.reply_text(user_message)
         return
     except Exception as e:
         logger.exception("Неожиданная ошибка при получении курсов")
@@ -914,6 +959,14 @@ def main():
             print("  ps aux | grep 'python.*bot.py'")
             print("="*60 + "\n")
             sys.exit(1)
+        elif isinstance(error, TimedOut):
+            logger.warning(f"Таймаут при обращении к Telegram API: {error}")
+            # Не прерываем работу бота, просто логируем
+            # Telegram библиотека сама обработает повторные попытки
+        elif isinstance(error, NetworkError):
+            logger.warning(f"Сетевая ошибка при обращении к Telegram API: {error}")
+            # Не прерываем работу бота, просто логируем
+            # Telegram библиотека сама обработает повторные попытки
         else:
             logger.exception(f"Неожиданная ошибка: {error}")
 
