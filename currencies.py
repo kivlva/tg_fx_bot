@@ -16,8 +16,10 @@ AVAILABLE_CURRENCIES = [
     "CNY",  # Китай (Chinese Yuan)
     "RUB",  # Россия (Russian Ruble)
     "THB",  # Таиланд (Thai Baht)
+    "TRY",  # Турция (Turkish Lira)
     "KRW",  # Южная Корея (South Korean Won)
     "INR",  # Индия (Indian Rupee)
+    "IDR",  # Индонезия (Indonesian Rupiah)
     "CAD",  # Канада (Canadian Dollar)
     "CHF",  # Швейцария (Swiss Franc)
     "SGD",  # Сингапур (Singapore Dollar)
@@ -25,6 +27,7 @@ AVAILABLE_CURRENCIES = [
     "MXN",  # Мексика (Mexican Peso)
     "LKR",  # Шри-Ланка (Sri Lankan Rupee)
     "MVR",  # Мальдивы (Maldivian Rufiyaa)
+    "MUR",  # Маврикий (Mauritian Rupee)
     "AED",  # Арабские Эмираты (UAE Dirham)
     "RSD",  # Сербия (Serbian Dinar)
     "BYN",  # Беларусь (Belarusian Ruble)
@@ -47,8 +50,10 @@ CURRENCY_FLAGS = {
     "CNY": "🇨🇳",  # Китай
     "RUB": "🇷🇺",  # Россия
     "THB": "🇹🇭",  # Таиланд
+    "TRY": "🇹🇷",  # Турция
     "KRW": "🇰🇷",  # Южная Корея
     "INR": "🇮🇳",  # Индия
+    "IDR": "🇮🇩",  # Индонезия
     "CAD": "🇨🇦",  # Канада
     "CHF": "🇨🇭",  # Швейцария
     "SGD": "🇸🇬",  # Сингапур
@@ -56,6 +61,7 @@ CURRENCY_FLAGS = {
     "MXN": "🇲🇽",  # Мексика
     "LKR": "🇱🇰",  # Шри-Ланка
     "MVR": "🇲🇻",  # Мальдивы
+    "MUR": "🇲🇺",  # Маврикий
     "AED": "🇦🇪",  # ОАЭ
     "RSD": "🇷🇸",  # Сербия
     "BYN": "🇧🇾",  # Беларусь
