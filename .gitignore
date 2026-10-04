@@ -97,3 +97,6 @@ dmypy.json
 *.tar.gz
 *.zip
 ._*
+
+# Local project documentation
+/DOCS/
