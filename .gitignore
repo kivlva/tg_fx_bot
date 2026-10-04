@@ -88,3 +88,15 @@ htmlcov/
 .dmypy.json
 dmypy.json
 
+
+# Deployment files and local credentials
+.env.*
+.terraform/
+*.tfstate*
+*.tfplan
+*.tar.gz
+*.zip
+._*
+
+# Local project documentation
+/DOCS/
